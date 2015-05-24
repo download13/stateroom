@@ -7,7 +7,7 @@
 
 
 	function StateRoomClient(ws) {
-		asEmitter(this); // TODO: Package emitter-helper with this
+		asEmitter(this);
 
 
 		this.id = null;
@@ -44,9 +44,6 @@
 				self._handleCmd(fromId, cmd, args);
 			};
 		};
-
-		// TODO: Implement re-connect
-		// Use the exp backoff thing
 	}
 
 	StateRoomClient.prototype.set = function(key, value) {
