@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/download13/stateroom/issues"
   },
-  "homepage": "https://github.com/download13/stateroom#readme"
+  "homepage": "https://github.com/download13/stateroom#readme",
+  "dependencies": {
+    "uuid-v4": "^0.1.0"
+  }
 }
