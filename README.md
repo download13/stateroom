@@ -106,5 +106,10 @@ Must fulfil this interface:
   * .delete(key)
   * .clear()
 
+### Events - .on(name, cb)
+* set `clientId` `key` `value`
+* delete `clientId` `key`
+* clear `clientId`
+
 
 ## License: MIT
