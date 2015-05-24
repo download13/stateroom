@@ -5,8 +5,8 @@
   - [Server API](#server-api)
     - [clientObject](#clientobject)
   - [Client API](#client-api)
+    - [Events - .on(name, cb)](#events---onname-cb)
   - [License: MIT](#license-mit)
-
 
 # stateroom
 
