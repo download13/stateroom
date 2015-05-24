@@ -16,6 +16,8 @@
 
 		this._members = Object.create(null);
 
+		this._ws = ws;
+
 
 		var self = this;
 
