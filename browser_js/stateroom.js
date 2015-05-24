@@ -14,14 +14,14 @@
 
 		this._localState = Object.create(null);
 
-		this._members = Object.create(null);
-
 		this._ws = ws;
 
 
 		var self = this;
 
 		ws.onopen = function() {
+			self._members = Object.create(null);
+
 			self._flushLocalState();
 
 			// A message comes from the server as JSON
@@ -50,6 +50,12 @@
 	}
 
 	StateRoomClient.prototype.set = function(key, value) {
+		var valueType = typeof value;
+
+		if(valueType !== 'string' && valueType !== 'number') {
+			throw new Error('Value must be a string or number');
+		}
+
 		this._localState[key] = value;
 
 		this._flushLocalState();
