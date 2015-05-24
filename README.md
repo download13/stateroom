@@ -1,10 +1,10 @@
 - [stateroom](#stateroom)
-  - [Install:](#install)
-  - [Server Example:](#server-example)
-  - [Client Example:](#client-example)
-  - [Server API:](#server-api)
+  - [Install](#install)
+  - [Server Example](#server-example)
+  - [Client Example](#client-example)
+  - [Server API](#server-api)
     - [clientObject](#clientobject)
-  - [Client API:](#client-api)
+  - [Client API](#client-api)
   - [License: MIT](#license-mit)
 
 
@@ -32,10 +32,10 @@ client's state. This includes the setting client, which did not alter it's own c
 making the request, but waited for the command from the server to do so.
 
 
-## Install:
+## Install
 	npm i stateroom
 
-## Server Example:
+## Server Example
 ```javascript
 var StateRoom = require('stateroom');
 
@@ -55,7 +55,7 @@ websocketServer.on('connection', function(client) {
 });
 ```
 
-## Client Example:
+## Client Example
 ```javascript
 // TODO: Add this once the client library is here
 var ws = new WebSocket(serverUrl);
@@ -88,7 +88,7 @@ stateroom.on('set', function(fromId, key, value) {
 ```
 
 
-## Server API:
+## Server API
 * new StateRoom() - Creates a new stateroom
   * .addClient(clientObject) - Adds a client to the stateroom
   * .removeClient(clientObject) - Removes a client from the stateroom
@@ -100,7 +100,7 @@ Must fulfil this interface:
 * .on('message', function(message) {}) - Emits 'message' event with string message from the client
 
 
-##Client API:
+## Client API
 * new StateRoom(ws) - Creates a new StateRoom which will use the WebSocket instance (ws) to maintain state.
   * .set(key, value)
   * .delete(key)
