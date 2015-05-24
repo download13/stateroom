@@ -79,12 +79,15 @@ stateroom.on('set', function(fromId, key, value) {
 
   if(fromId === stateroom.id) {
     // This is an update to OUR state
+    // This will eventually be triggered by our set call below
   }
 
   if(key === 'observed-property') {
     view.render({client: fromId, property: value});
   }
 });
+
+stateroom.set('testproperty', 'somevalue');
 ```
 
 
@@ -102,7 +105,7 @@ Must fulfil this interface:
 
 ## Client API
 * new StateRoom(ws) - Creates a new StateRoom which will use the WebSocket instance (ws) to maintain state.
-  * .set(key, value)
+  * .set(key, value) - Sets a property on our state object. value must be a string or number.
   * .delete(key)
   * .clear()
 
