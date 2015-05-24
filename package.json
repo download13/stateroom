@@ -1,6 +1,6 @@
 {
   "name": "stateroom",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Provides state synchronization for clients",
   "main": "lib/stateroom.js",
   "scripts": {
