@@ -1,10 +1,10 @@
 {
   "name": "stateroom",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "description": "Provides state synchronization for clients",
-  "main": "lib/stateroom.js",
+  "main": "server/index.js",
   "scripts": {
-    "test": "mocha"
+    "build": "node scripts/build"
   },
   "repository": {
     "type": "git",
@@ -22,6 +22,11 @@
   },
   "homepage": "https://github.com/download13/stateroom#readme",
   "dependencies": {
-    "uuid-v4": "^0.1.0"
+    "uuidv4": "^0.3.1"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-object-rest-spread": "^6.6.5",
+    "babel-preset-es2015": "^6.6.0",
+    "mock-socket": "^2.0.0"
   }
 }
