@@ -1,13 +1,5 @@
 export const
-	CMD_ADD_CLIENT = 0,
+	CMD_SET_ID = 0,
 	CMD_REMOVE_CLIENT = 1,
-	CMD_SET = 2,
-	CMD_DELETE = 3,
-	CMD_CLEAR = 4,
-	// TODO: Implement
-	CMD_PUSH = 5,
-	CMD_POP = 6,
-	CMD_UNSHIFT = 7,
-	CMD_SHIFT = 8,
-	CMD_SPLICE = 9
+	CMD_SET = 2
 ;

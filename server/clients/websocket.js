@@ -4,15 +4,9 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _uuidv = require('uuidv4');
-
-var _uuidv2 = _interopRequireDefault(_uuidv);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _common = require('../../common');
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -20,7 +14,7 @@ var WebsocketClient = function () {
 	function WebsocketClient(ws) {
 		_classCallCheck(this, WebsocketClient);
 
-		this.id = (0, _uuidv2.default)();
+		this.id = (0, _common.createId)();
 
 		this._ws = ws;
 
@@ -30,24 +24,24 @@ var WebsocketClient = function () {
 
 	_createClass(WebsocketClient, [{
 		key: '_handleMessage',
-		value: function _handleMessage(msg) {
+		value: function _handleMessage(message) {
+			var data = void 0;
 			try {
-				var _JSON$parse = JSON.parse(msg);
+				data = JSON.parse(message);
+			} catch (e) {
+				console.log('Invalid JSON sent to server:', message);
+				return;
+			}
 
-				var _JSON$parse2 = _slicedToArray(_JSON$parse, 2);
-
-				var cmd = _JSON$parse2[0];
-				var args = _JSON$parse2[1];
-
-				if (this.onCmd) {
-					this.onCmd(cmd, args);
-				}
-			} catch (e) {}
+			if (this.onCmd) {
+				this.onCmd(data);
+			}
 		}
 	}, {
-		key: 'sendCmd',
-		value: function sendCmd(fromId, cmd, args) {
-			this._ws.send(JSON.stringify([fromId, cmd, args]));
+		key: 'send',
+		value: function send(message) {
+			//console.log('WebsocketClient send', message)
+			this._ws.send(JSON.stringify(message));
 		}
 	}, {
 		key: 'destroy',

@@ -10,14 +10,11 @@ Each client has it's own state to which it has read/write access. It also has re
 ## Server Example
 ```javascript
 import WebsocketClient from 'stateroom/server/clients/websocket';
-import {Room, RoomManager} from 'stateroom';
+import {createRoom, createRoomManager} from 'stateroom';
 import {Server} from 'ws';
 
 
-const room = new Room({ // Optional (both default to Infinity)
-    countLimit: 10, // Limits the number of properties a client can set
-    sizeLimit: 1024 // Limits the size of each property
-});
+const room = createRoom();
 const wss = new Server();
 
 wss.on('connection', ws => {
@@ -28,7 +25,7 @@ wss.on('connection', ws => {
 });
 
 // If you want to have multiple rooms, RoomManager is a convenience class
-const rooms = new RoomManager(); // Can take the same options as Room
+const rooms = createRoomManager();
 
 wss.on('connection', ws => {
     const roomname = 'room' + Math.random(); // Pretend the user picked this
@@ -45,11 +42,11 @@ wss.on('connection', ws => {
 ## Client Example
 ```javascript
 // At the moment, only WebSocket is supported by the client library
-import {RoomClient} from 'stateroom/client';
+import {createClient} from 'stateroom/client';
 
 
 const ws = new WebSocket(serverUrl);
-const client = new RoomClient(ws);
+const client = createClient(ws);
 
 client.id; // Contains your id
 client.set('prop1', 5);

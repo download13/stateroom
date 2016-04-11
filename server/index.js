@@ -3,132 +3,95 @@
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.RoomManager = exports.Room = undefined;
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.createRoom = createRoom;
+exports.createRoomManager = createRoomManager;
 
 var _constants = require('../common/constants');
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+var _common = require('../common');
 
-var Room = exports.Room = function () {
-	function Room() {
-		var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+var _redux = require('redux');
 
-		_classCallCheck(this, Room);
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-		this._countLimit = options.countLimit || Infinity;
-		this._sizeLimit = options.sizeLimit || Infinity;
-		this._states = new Map(); // Maps clients to states
+function createRoom() {
+	var store = (0, _redux.createStore)(roomReducer);
+	var clients = new Set();
+
+	function broadcast(message) {
+		//console.log('Room broadcast', message)
+		clients.forEach(function (client) {
+			client.send(message);
+		});
 	}
 
-	_createClass(Room, [{
-		key: 'addClient',
-		value: function addClient(joiningClient) {
-			// New member joins, initial state is blank
-			this._states.set(joiningClient, new Map());
+	return {
+		addClient: function addClient(joiningClient) {
+			clients.add(joiningClient);
+			//console.log('server CMD_SET_ID', joiningClient.id)
+			joiningClient.send([_constants.CMD_SET_ID, joiningClient.id]);
 
-			// Tell current members about the new one
-			// The newbie also learns it's own name the first time it hears it
-			this._broadcast(null, _constants.CMD_ADD_CLIENT, [joiningClient.id]);
-
-			// Send commands to bring it up to the current state
-			this._states.forEach(function (state, client) {
-				// Tell it about the existing members
-				if (client !== joiningClient) {
-					// The joining client already knows about itself
-					joiningClient.sendCmd(null, _constants.CMD_ADD_CLIENT, [client.id]);
-				}
-
-				// And about the state of the existing members
-				state.forEach(function (value, key) {
-					joiningClient.sendCmd(client.id, _constants.CMD_SET, [k, v]);
-				});
+			var state = store.getState();
+			Object.keys(state).forEach(function (clientId) {
+				joiningClient.send([_constants.CMD_SET, [clientId, state[clientId]]]);
 			});
 
-			// Start handling commands from new member
-			joiningClient.onCmd = this._handleClientCmd.bind(this, joiningClient);
-		}
-	}, {
-		key: 'removeClient',
-		value: function removeClient(partingClient) {
-			partingClient.destroy();
-			this._states.delete(partingClient);
-			this._broadcast(null, _constants.CMD_REMOVE_CLIENT, [partingClient.id]);
+			store.dispatch({ type: 'ADD_CLIENT', payload: joiningClient.id });
 
-			if (this._states.size === 0 && this.onEmpty) {
+			joiningClient.onCmd = function (delta) {
+				store.dispatch({ type: 'CLIENT_SET', payload: [joiningClient.id, delta] });
+				broadcast([_constants.CMD_SET, [joiningClient.id, delta]]);
+				//console.log('onCmd broadcast', [joiningClient.id, delta])
+			};
+		},
+		removeClient: function removeClient(partingClient) {
+			clients.delete(partingClient);
+			partingClient.destroy();
+
+			store.dispatch({ type: 'REMOVE_CLIENT', payload: partingClient.id });
+			broadcast([_constants.CMD_REMOVE_CLIENT, partingClient.id]);
+
+			if (clients.size === 0 && this.onEmpty) {
 				this.onEmpty();
 			}
 		}
-	}, {
-		key: '_handleClientCmd',
-		value: function _handleClientCmd(fromClient, cmd, args) {
-			var state = this._states.get(fromClient);
-			var applied = false;
+	};
+}
 
-			try {
-				if (cmd === _constants.CMD_SET) {
-					var _args = _slicedToArray(args, 2);
+function roomReducer() {
+	var state = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	var _ref = arguments[1];
+	var type = _ref.type;
+	var payload = _ref.payload;
 
-					var key = _args[0];
-					var value = _args[1];
+	if (type === 'ADD_CLIENT') {
+		return _extends({}, state, _defineProperty({}, payload, {}));
+	} else if (type === 'REMOVE_CLIENT') {
+		return (0, _common.trim)(_extends({}, state, _defineProperty({}, payload, null)));
+	} else if (type === 'CLIENT_SET') {
+		var _payload = _slicedToArray(payload, 2);
 
-					var valueType = typeof value === 'undefined' ? 'undefined' : _typeof(value);
-					if (state.size < this._countLimit && typeof key === 'string' && key.length < this._sizeLimit && (valueType === 'string' && value.length < this._sizeLimit || valueType === 'number')) {
-						state.set(key, value);
-						applied = true;
-					}
-				} else if (cmd === _constants.CMD_DELETE) {
-					var _args2 = _slicedToArray(args, 1);
+		var fromId = _payload[0];
+		var delta = _payload[1];
 
-					var _key = _args2[0];
-
-					if (typeof _key === 'string') {
-						state.delete(_key);
-						applied = true;
-					}
-				} else if (cmd === _constants.CMD_CLEAR) {
-					state.clear();
-					applied = true;
-				}
-			} catch (e) {}
-
-			// Once applied, tell every client to execute this command on their state machines as well
-			if (applied) {
-				this._broadcast(fromClient.id, cmd, args);
-			}
-		}
-	}, {
-		key: '_broadcast',
-		value: function _broadcast(fromId, cmd, args) {
-			this._states.forEach(function (state, client) {
-				client.sendCmd(fromId, cmd, args);
-			});
-		}
-	}]);
-
-	return Room;
-}();
-
-var RoomManager = exports.RoomManager = function () {
-	function RoomManager(options) {
-		_classCallCheck(this, RoomManager);
-
-		this._options = options;
-		this._rooms = new Map();
+		return _extends({}, state, _defineProperty({}, fromId, _extends({}, state[fromId], delta)));
+	} else {
+		return state;
 	}
+}
 
-	_createClass(RoomManager, [{
-		key: 'get',
-		value: function get(name) {
-			var rooms = this._rooms;
+function createRoomManager() {
+	var rooms = new Map();
 
+	return {
+		get: function get(name) {
 			if (!rooms.has(name)) {
-				var room = new Room(this._options);
+				var room = createRoom();
 				room.onEmpty = function () {
 					return rooms.delete(name);
 				};
@@ -137,7 +100,5 @@ var RoomManager = exports.RoomManager = function () {
 
 			return rooms.get(name);
 		}
-	}]);
-
-	return RoomManager;
-}();
+	};
+}

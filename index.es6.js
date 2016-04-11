@@ -1,1 +1,1 @@
-export {Room, RoomManager} from './server';
+export {createRoom, createRoomManager} from './server';

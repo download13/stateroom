@@ -1,9 +1,9 @@
-import uuid from 'uuidv4';
+import {createId} from '../../common';
 
 
 export default class WebsocketClient {
 	constructor(ws) {
-		this.id = uuid();
+		this.id = createId();
 
 		this._ws = ws;
 
@@ -11,17 +11,23 @@ export default class WebsocketClient {
 		// TODO: On close and error
 	}
 
-	_handleMessage(msg) {
+	_handleMessage(message) {
+		let data;
 		try {
-			const [cmd, args] = JSON.parse(msg);
-			if(this.onCmd) {
-				this.onCmd(cmd, args);
-			}
-		} catch(e) {}
+			data = JSON.parse(message);
+		} catch(e) {
+			console.log('Invalid JSON sent to server:', message);
+			return;
+		}
+
+		if(this.onCmd) {
+			this.onCmd(data);
+		}
 	}
 
-	sendCmd(fromId, cmd, args) {
-		this._ws.send(JSON.stringify([fromId, cmd, args]));
+	send(message) {
+		//console.log('WebsocketClient send', message)
+		this._ws.send(JSON.stringify(message));
 	}
 
 	destroy() {

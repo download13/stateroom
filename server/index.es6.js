@@ -1,116 +1,94 @@
 import {
-	CMD_ADD_CLIENT,
+	CMD_SET_ID,
 	CMD_REMOVE_CLIENT,
-	CMD_SET,
-	CMD_DELETE,
-	CMD_CLEAR
+	CMD_SET
 } from '../common/constants';
+import {trim} from '../common';
+import {createStore} from 'redux';
 
 
-export class Room {
-	constructor(options = {}) {
-		this._countLimit = options.countLimit || Infinity;
-		this._sizeLimit = options.sizeLimit || Infinity;
-		this._states = new Map(); // Maps clients to states
+export function createRoom() {
+	const store = createStore(roomReducer);
+	const clients = new Set();
+
+	function broadcast(message) {
+		//console.log('Room broadcast', message)
+		clients.forEach(client => {
+			client.send(message);
+		});
 	}
 
-	addClient(joiningClient) {
-		// New member joins, initial state is blank
-		this._states.set(joiningClient, new Map());
+	return {
+		addClient(joiningClient) {
+			clients.add(joiningClient);
+			//console.log('server CMD_SET_ID', joiningClient.id)
+			joiningClient.send([CMD_SET_ID, joiningClient.id]);
 
-		// Tell current members about the new one
-		// The newbie also learns it's own name the first time it hears it
-		this._broadcast(null, CMD_ADD_CLIENT, [joiningClient.id]);
-
-		// Send commands to bring it up to the current state
-		this._states.forEach((state, client) => {
-			// Tell it about the existing members
-			if(client !== joiningClient) {
-				// The joining client already knows about itself
-				joiningClient.sendCmd(null, CMD_ADD_CLIENT, [client.id]);
-			}
-
-			// And about the state of the existing members
-			state.forEach((value, key) => {
-				joiningClient.sendCmd(client.id, CMD_SET, [k, v]);
+			const state = store.getState();
+			Object.keys(state).forEach(clientId => {
+				joiningClient.send([CMD_SET, [clientId, state[clientId]]]);
 			});
-		});
 
-		// Start handling commands from new member
-		joiningClient.onCmd = this._handleClientCmd.bind(this, joiningClient);
-	}
+			store.dispatch({type: 'ADD_CLIENT', payload: joiningClient.id});
 
-	removeClient(partingClient) {
-		partingClient.destroy();
-		this._states.delete(partingClient);
-		this._broadcast(null, CMD_REMOVE_CLIENT, [partingClient.id]);
+			joiningClient.onCmd = delta => {
+				store.dispatch({type: 'CLIENT_SET', payload: [joiningClient.id, delta]});
+				broadcast([CMD_SET, [joiningClient.id, delta]]);
+				//console.log('onCmd broadcast', [joiningClient.id, delta])
+			};
+		},
+		removeClient(partingClient) {
+			clients.delete(partingClient);
+			partingClient.destroy();
 
-		if(this._states.size === 0 && this.onEmpty) {
-			this.onEmpty();
-		}
-	}
+			store.dispatch({type: 'REMOVE_CLIENT', payload: partingClient.id});
+			broadcast([CMD_REMOVE_CLIENT, partingClient.id]);
 
-	_handleClientCmd(fromClient, cmd, args) {
-		const state = this._states.get(fromClient);
-		let applied = false;
-
-		try {
-			if(cmd === CMD_SET) {
-				const [key, value] = args;
-				const valueType = typeof value;
-				if(
-					state.size < this._countLimit &&
-					typeof key === 'string' &&
-					key.length < this._sizeLimit &&
-					(
-						(valueType === 'string' && value.length < this._sizeLimit) ||
-						valueType === 'number'
-					)
-				) {
-					state.set(key, value);
-					applied = true;
-				}
-			} else if(cmd === CMD_DELETE) {
-				const [key] = args;
-				if(typeof key === 'string') {
-					state.delete(key);
-					applied = true;
-				}
-			} else if(cmd === CMD_CLEAR) {
-				state.clear();
-				applied = true;
+			if(clients.size === 0 && this.onEmpty) {
+				this.onEmpty();
 			}
-		} catch(e) {}
-
-		// Once applied, tell every client to execute this command on their state machines as well
-		if(applied) {
-			this._broadcast(fromClient.id, cmd, args);
 		}
-	}
+	};
+}
 
-	_broadcast(fromId, cmd, args) {
-		this._states.forEach((state, client) => {
-			client.sendCmd(fromId, cmd, args);
+function roomReducer(state = {}, {type, payload}) {
+	if(type === 'ADD_CLIENT') {
+		return {
+			...state,
+			[payload]: {}
+		};
+	} else if(type === 'REMOVE_CLIENT') {
+		return trim({
+			...state,
+			[payload]: null
 		});
+	} else if(type === 'CLIENT_SET') {
+		const [fromId, delta] = payload;
+		return {
+			...state,
+			[fromId]: {
+				...state[fromId],
+				...delta
+			}
+		};
+	} else {
+		return state;
 	}
 }
 
 
-export class RoomManager {
-	constructor(options) {
-		this._options = options;
-		this._rooms = new Map();
-	}
+export function createRoomManager() {
+	const rooms = new Map();
 
-	get(name) {
-		const rooms = this._rooms;
+	return {
+		get(name) {
+			if(!rooms.has(name)) {
+				const room = createRoom();
+				room.onEmpty = () => rooms.delete(name);
+				rooms.set(name, room);
+			}
 
-		if(!rooms.has(name)) {
-			const room = new Room(this._options);
-			room.onEmpty = () => rooms.delete(name);
-			rooms.set(name, room);
+			return rooms.get(name);
 		}
-
-		return rooms.get(name);
-	}
+	};
 }

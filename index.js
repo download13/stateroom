@@ -6,15 +6,15 @@ Object.defineProperty(exports, "__esModule", {
 
 var _server = require('./server');
 
-Object.defineProperty(exports, 'Room', {
+Object.defineProperty(exports, 'createRoom', {
   enumerable: true,
   get: function get() {
-    return _server.Room;
+    return _server.createRoom;
   }
 });
-Object.defineProperty(exports, 'RoomManager', {
+Object.defineProperty(exports, 'createRoomManager', {
   enumerable: true,
   get: function get() {
-    return _server.RoomManager;
+    return _server.createRoomManager;
   }
 });
